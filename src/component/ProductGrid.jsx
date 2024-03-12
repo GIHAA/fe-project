@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import productData from './product-data.json';
+import productData from '../data/product-data.json';
 
 const ProductGrid = () => {
   const [products, setProducts] = useState([]);
