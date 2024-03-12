@@ -5,20 +5,29 @@ const ProductGrid = () => {
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const observerRef = useRef(null);
-  const itemsPerPage = 12;
+  const itemsPerPage = 8;
   const [hoveredProductId, setHoveredProductId] = useState(null);
   const imageIntervalRefs = useRef({});
+  const fetchedProductIds = useRef(new Set()); 
 
   useEffect(() => {
     const fetchProducts = () => {
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
-      const newProducts = productData.slice(startIndex, endIndex);
-      setProducts((prevProducts) => [...prevProducts, ...newProducts]);
+      const newProducts = productData.slice(startIndex, endIndex)
+        .filter(product => !fetchedProductIds.current.has(product.id));
+
+      if (newProducts.length === 0) {
+        return;
+      }
+
+      const updatedProducts = [...products, ...newProducts];
+      setProducts(updatedProducts);
+      newProducts.forEach(product => fetchedProductIds.current.add(product.id)); 
     };
 
     fetchProducts();
-  }, [currentPage]);
+  }, [currentPage, products]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -48,6 +57,7 @@ const ProductGrid = () => {
     const images = document.querySelectorAll(`#product-${productId} img`);
     images.forEach((img, i) => {
       img.style.display = i === index ? 'block' : 'none';
+      img.style.opacity = i === index ? 1 : 0;
     });
 
     clearInterval(imageIntervalRefs.current[productId]);
@@ -55,7 +65,19 @@ const ProductGrid = () => {
       const currentIndex = [...images].findIndex((img) => img.style.display === 'block');
       const nextIndex = (currentIndex + 1) % images.length;
       images.forEach((img, i) => {
-        img.style.display = i === nextIndex ? 'block' : 'none';
+        if (i === nextIndex) {
+          img.style.display = 'block';
+          img.style.opacity = 0;
+          setTimeout(() => {
+            img.style.transition = 'opacity 0.3s ease-in-out';
+            img.style.opacity = 1;
+          }, 10);
+        } else {
+          img.style.opacity = 0;
+          setTimeout(() => {
+            img.style.display = 'none';
+          }, 300);
+        }
       });
     }, 2000);
   };
@@ -81,7 +103,7 @@ const ProductGrid = () => {
                 key={index}
                 src={image}
                 alt={`Product ${product.id}`}
-                className={`absolute inset-0 w-full h-full object-cover ${
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
                   index === 0 ? 'block' : 'hidden'
                 }`}
               />
